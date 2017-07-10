@@ -1,13 +1,27 @@
 #include <iostream>
+#include <algorithm>
 #include <queue>
 #include <vector>
 #include <array>
-#include <list>
+
 #include <map>
+#include <limits.h>
 #include <math.h>
-#include "bfs_dynamic.h"
+
+#define N_MAX	(8)
+#define L		(8*7*6*5*4*3*2*1)	// 40320
 
 using namespace std;
+
+enum COLOR { WHITE, GRAY, BLACK };
+
+struct Node
+{
+	int n;
+	COLOR color;
+	int distance;
+	int pi;
+};
 
 array<vector<int>, L> graph;
 array<Node, L> Result;
@@ -15,10 +29,54 @@ map<int, int> graph_map;
 
 int seq = 0;
 
+int bfs(int s, array<vector<int>, L > g, int length)
+{
+	queue<Node> Q;
+
+	// initialize
+	for (int n = 0; n < length; n++)
+	{
+		Node node;
+		node.n = n;
+		node.pi = -1;
+		if (n != s)
+		{
+			node.color = WHITE;
+			node.distance = INT_MAX;
+		}
+		else
+		{
+			node.color = GRAY;
+			node.distance = 0;
+			Q.push(node);
+		}
+		Result[n] = node;
+	}
+
+	while (!Q.empty())
+	{
+		Node node = Q.front();
+		Q.pop();
+		for (size_t i = 0; i < g[node.n].size(); i++)
+		{
+			int n_num = g[node.n].at(i);
+			if (Result[n_num].color == WHITE)
+			{
+				Result[n_num].distance = Result[node.n].distance + 1;
+				Result[n_num].pi = node.n;
+				Result[n_num].color = GRAY;
+				Q.push(Result[n_num]);
+			}
+		}
+		Result[node.n].color = BLACK;
+	}
+	return 1;
+}
+
 int getValue(vector<int> perm)
 {
 	int value = 0;
-	for (auto x: perm)
+	for (auto x : perm)
 	{
 		value = value * 10 + x;
 	}
@@ -100,12 +158,10 @@ int main()
 	int T;
 	scanf("%d", &T);
 
-	//for (int i = 1; i <= 8; i++)
-		precalc(N_MAX);
+	precalc(N_MAX);
 
-	std::map<int, int>::iterator it;
-	it = graph_map.find(1234567);
-	bfs(it->second, graph, L);
+	vector<int> eight = { 0,1,2,3,4,5,6,7 };
+	bfs(getMappedValue(eight), graph, L);
 
 	while (T--)
 	{
@@ -113,38 +169,27 @@ int main()
 		scanf("%d", &N);
 
 		vector<int> a(N);
-		list<int> s;
 		for (int i = 0; i < N; i++)
 		{
 			scanf("%d", &a[i]);
-			s.push_back (a[i]);
 		}
-		s.sort();
 
-		int value = 0;
-		int index = 0;
-		int norm = 0;
-		for (auto& x : s)
+		vector<int> b(N_MAX);
+		for (int i = 0; i < N; i++)
 		{
-			index = (int)pow(10, N);
-			for (int i = 0; i < N; i++)
-			{
-				index /= 10;
-				if (a[i] == x)
-				{
-					value = value + (norm * index);
-					break;
-				}
-			}
-			norm++;
+			int small = 0;
+			for (int j = 0; j < N; j++)
+				if (a[j] < a[i])
+					small++;
+			b[i] = small;
 		}
 		for (int i = N; i < N_MAX; i++)
 		{
-			value = value * 10 + i;
+			b[i] = i;
 		}
-		it = graph_map.find(value);
-		printf("%d\n", Result[it->second].distance);
+
+		printf("%d\n", Result[getMappedValue(b)].distance);
 	}
-	system("pause");
+	//	system("pause");
 	return 0;
 }
